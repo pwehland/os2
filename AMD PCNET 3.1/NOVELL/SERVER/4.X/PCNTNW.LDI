@@ -1,0 +1,273 @@
+VER:	3.00
+SYN:	1.00
+
+DR PCNTNW
+{
+	DES:	$PCNTNW_1
+	HELP:	$PCNTNW_2
+	PAR:	3.00
+	FILE:	PCNTNW.LAN
+;	OF:	MSM.NLM, ETHERTSM.NLM
+
+	LI BUSTYPE OPT
+	{
+		DES:	$PCNTNW_3
+		HELP:	$PCNTNW_4
+		CD:	'ISA'
+		CH:	'PNP'
+
+		CD:	'PCI'
+		CH:	'PCI'
+		
+		CD:	'PCI1'
+		CH:	'PCI1'
+		
+		CD:	'PCI2'
+		CH:	'PCI2'
+
+		OUT:	'BUSTYPE=%s'
+
+	}
+
+	PR PORT OPT
+	{
+		DES:	$PCNTNW_9
+		HELP:	$PCNTNW_10
+		TYP:	HEX(4)
+		VAL:	0000 - FFFF
+		RES:	20
+		OUT:	'PORT=%s'
+	
+	}
+	
+	PR BOARD if ( PORT == UNDEFINED) REQ ELSE OPT
+	{
+
+		DES:	$PCNTNW_7
+		HELP:	$PCNTNW_8
+		TYP:	DEC(4)
+		VAL:	0001 - 0254
+		OUT:	'BOARD=%s'
+	}
+
+	PR INT OPT
+	{
+		DES:	$PCNTNW_11
+		HELP:	$PCNTNW_12
+		TYP:	HEX
+		VAL:	1 - F
+		OUT:	'INT=%s'
+	}
+
+	PR DMA if ( BUSTYPE == UNDEFINED or BUSTYPE == 1 ) OPT else HID
+	{
+		DES:	$PCNTNW_13
+		HELP:	$PCNTNW_14
+		TYP:	HEX
+		VAL:	3, 5, 6, 7
+		OUT:	'DMA=%s'
+	}
+
+	FR FrameSelect
+	{
+		CH:	'Ethernet_802.2'
+		CH:	'Ethernet_802.3'
+		CH:	'Ethernet_SNAP'
+		CH:	'Ethernet_II'
+		DEF:	1, 2
+	}
+
+	LI FDUP OPT
+	{
+		DES:	$PCNTNW_15
+		HELP:	$PCNTNW_16
+		CD:	'Turn Off the Full Duplex function.'
+		CH:	'OFF'
+
+		CD:	'Full Duplex on 10 Base-T Port.'
+		CH:	'UTP'
+
+		CD:	'Full Duplex on AUI port.'
+		CH:	'AUI'
+
+		OUT:	'FDUP=%s'
+
+	}
+	
+	PR NODE
+	{
+	}
+	
+}
+
+
+DLANG:	4
+;English
+	$PCNTNW_1  = "AMD PCnet Family (EtherTeam PCI/ISA) Network Driver"
+	$PCNTNW_2  = "This driver (PCNTNW.LAN) supports both EtherTeam ISA
+		      and EtherTeam PCI network adapters."
+	$PCNTNW_3  = "Bus Type of the adapter installed."
+	$PCNTNW_4  = "As default, all bus types are scanned. If
+		      explicitly specified, then only that bus
+		      type is scanned."
+	$PCNTNW_7  = "Physical Board Number"
+	$PCNTNW_8  = "This keyword is applied only if you need to add
+		      multiple frame types, and you have not defined
+		      the board explicitly by using its port address."
+	$PCNTNW_9  = "I/O port address of the network device."
+	$PCNTNW_10 = "Found by scan as default. If explicitly specified,
+		      must match with its actual value.
+		      \nSupported values for EtherTeam ISA: 0200 - 03E0
+		      in 20h steps
+		      \nSupported values for EtherTeam PCI: 0000 - FFE0
+		      in 20h steps"
+	$PCNTNW_11 = "IRQ number of the networking board"
+	$PCNTNW_12 = "Found by scan as default. If explicitly specified,
+		      must match with its actual value.
+		      \nSupported values for EtherTeam ISA: 3, 4, 5, 9, A, B, F
+		      \nSupported values for EtherTeam PCI: 1 - F"
+	$PCNTNW_13 = "DMA channel of the networking board."
+	$PCNTNW_14 = "This option applies to EtherTeam ISA only.
+		      Found by scan as default. If explicitly specified,
+		      must match with its actual value."
+	$PCNTNW_15 = "Full Duplex Support."
+	$PCNTNW_16 = "Change the Default Full Duplex operation."
+
+
+
+LANG:	6
+;French
+	$PCNTNW_1  = "AMD PCnet Family (EtherTeam PCI/ISA) Network Driver"
+	$PCNTNW_2  = "This driver (PCNTNW.LAN) supports both EtherTeam ISA
+		      and EtherTeam PCI network adapters."
+	$PCNTNW_3  = "Bus Type of the adapter installed."
+	$PCNTNW_4  = "As default, all bus types are scanned. If
+		      explicitly specified, then only that bus
+		      type is scanned."
+	$PCNTNW_7  = "Physical Board Number"
+	$PCNTNW_8  = "This keyword is applied only if you need to add
+		      multiple frame types, and you have not defined
+		      the board explicitly by using its port address."
+	$PCNTNW_9  = "I/O port address of the network device."
+	$PCNTNW_10 = "Found by scan as default. If explicitly specified,
+		      must match with its actual value.
+		      \nSupported values for EtherTeam ISA: 0200 - 03E0
+		      in 20h steps
+		      \nSupported values for EtherTeam PCI: 0000 - FFE0
+		      in 20h steps"
+	$PCNTNW_11 = "IRQ number of the networking board"
+	$PCNTNW_12 = "Found by scan as default. If explicitly specified,
+		      must match with its actual value.
+		      \nSupported values for EtherTeam ISA: 3, 4, 5, 9, A, B, F
+		      \nSupported values for EtherTeam PCI: 1 - F"
+	$PCNTNW_13 = "DMA channel of the networking board."
+	$PCNTNW_14 = "This option applies to EtherTeam ISA only.
+		      Found by scan as default. If explicitly specified,
+		      must match with its actual value."
+	$PCNTNW_15 = "Full Duplex Support."
+	$PCNTNW_16 = "Change the Default Full Duplex operation."
+
+
+
+LANG:	7
+;German
+	$PCNTNW_1  = "AMD PCnet Family (EtherTeam PCI/ISA) Network Driver"
+	$PCNTNW_2  = "This driver (PCNTNW.LAN) supports both EtherTeam ISA
+		      and EtherTeam PCI network adapters."
+	$PCNTNW_3  = "Bus Type of the adapter installed."
+	$PCNTNW_4  = "As default, all bus types are scanned. If
+		      explicitly specified, then only that bus
+		      type is scanned."
+	$PCNTNW_7  = "Physical Board Number"
+	$PCNTNW_8  = "This keyword is applied only if you need to add
+		      multiple frame types, and you have not defined
+		      the board explicitly by using its port address."
+	$PCNTNW_9  = "I/O port address of the network device."
+	$PCNTNW_10 = "Found by scan as default. If explicitly specified,
+		      must match with its actual value.
+		      \nSupported values for EtherTeam ISA: 0200 - 03E0
+		      in 20h steps
+		      \nSupported values for EtherTeam PCI: 0000 - FFE0
+		      in 20h steps"
+	$PCNTNW_11 = "IRQ number of the networking board"
+	$PCNTNW_12 = "Found by scan as default. If explicitly specified,
+		      must match with its actual value.
+		      \nSupported values for EtherTeam ISA: 3, 4, 5, 9, A, B, F
+		      \nSupported values for EtherTeam PCI: 1 - F"
+	$PCNTNW_13 = "DMA channel of the networking board."
+	$PCNTNW_14 = "This option applies to EtherTeam ISA only.
+		      Found by scan as default. If explicitly specified,
+		      must match with its actual value."
+	$PCNTNW_15 = "Full Duplex Support."
+	$PCNTNW_16 = "Change the Default Full Duplex operation."
+
+
+
+LANG:	8
+;Italian
+	$PCNTNW_1  = "AMD PCnet Family (EtherTeam PCI/ISA) Network Driver"
+	$PCNTNW_2  = "This driver (PCNTNW.LAN) supports both EtherTeam ISA
+		      and EtherTeam PCI network adapters."
+	$PCNTNW_3  = "Bus Type of the adapter installed."
+	$PCNTNW_4  = "As default, all bus types are scanned. If
+		      explicitly specified, then only that bus
+		      type is scanned."
+	$PCNTNW_7  = "Physical Board Number"
+	$PCNTNW_8  = "This keyword is applied only if you need to add
+		      multiple frame types, and you have not defined
+		      the board explicitly by using its port address."
+	$PCNTNW_9  = "I/O port address of the network device."
+	$PCNTNW_10 = "Found by scan as default. If explicitly specified,
+		      must match with its actual value.
+		      \nSupported values for EtherTeam ISA: 0200 - 03E0
+		      in 20h steps
+		      \nSupported values for EtherTeam PCI: 0000 - FFE0
+		      in 20h steps"
+	$PCNTNW_11 = "IRQ number of the networking board"
+	$PCNTNW_12 = "Found by scan as default. If explicitly specified,
+		      must match with its actual value.
+		      \nSupported values for EtherTeam ISA: 3, 4, 5, 9, A, B, F
+		      \nSupported values for EtherTeam PCI: 1 - F"
+	$PCNTNW_13 = "DMA channel of the networking board."
+	$PCNTNW_14 = "This option applies to EtherTeam ISA only.
+		      Found by scan as default. If explicitly specified,
+		      must match with its actual value."
+	$PCNTNW_15 = "Full Duplex Support."
+	$PCNTNW_16 = "Change the Default Full Duplex operation."
+
+
+
+LANG:	14
+;Spanish
+	$PCNTNW_1  = "AMD PCnet Family (EtherTeam PCI/ISA) Network Driver"
+	$PCNTNW_2  = "This driver (PCNTNW.LAN) supports both EtherTeam ISA
+		      and EtherTeam PCI network adapters."
+	$PCNTNW_3  = "Bus Type of the adapter installed."
+	$PCNTNW_4  = "As default, all bus types are scanned. If
+		      explicitly specified, then only that bus
+		      type is scanned."
+	$PCNTNW_7  = "Physical Board Number"
+	$PCNTNW_8  = "This keyword is applied only if you need to add
+		      multiple frame types, and you have not defined
+		      the board explicitly by using its port address."
+	$PCNTNW_9  = "I/O port address of the network device."
+	$PCNTNW_10 = "Found by scan as default. If explicitly specified,
+		      must match with its actual value.
+		      \nSupported values for EtherTeam ISA: 0200 - 03E0
+		      in 20h steps
+		      \nSupported values for EtherTeam PCI: 0000 - FFE0
+		      in 20h steps"
+	$PCNTNW_11 = "IRQ number of the networking board"
+	$PCNTNW_12 = "Found by scan as default. If explicitly specified,
+		      must match with its actual value.
+		      \nSupported values for EtherTeam ISA: 3, 4, 5, 9, A, B, F
+		      \nSupported values for EtherTeam PCI: 1 - F"
+	$PCNTNW_13 = "DMA channel of the networking board."
+	$PCNTNW_14 = "This option applies to EtherTeam ISA only.
+		      Found by scan as default. If explicitly specified,
+		      must match with its actual value."
+	$PCNTNW_15 = "Full Duplex Support."
+	$PCNTNW_16 = "Change the Default Full Duplex operation."
+
+
+

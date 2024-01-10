@@ -1,0 +1,1460 @@
+[Identification]
+	OptionType = NetAdapter
+
+[PlatformsSupported]
+	ISA
+	EISA
+	PCI
+
+[LanguagesSupported]
+	ENG
+
+
+[FileConstants]
+
+UtilityInf		= "UTILITY.INF"
+ParamInf		= "NCPARAM.INF"
+subroutineinf   = "SUBROUTN.INF"
+NwSubsInf		= "NWSUBS.INF"
+Exit_Code		= 0
+
+NetEventDLL	 = "%SystemRoot%\System32\netevent.dll"
+IoLogMsgDLL	 = "%SystemRoot%\System32\IoLogMsg.dll"
+
+Manufacturer			= "Novell"
+ProductMajorVersion	= "1"
+ProductMinorVersion	= "0"
+ProductVersion			= $(ProductMajorVersion)"."$(ProductMinorVersion)
+DriverName				= "OdiLoad"
+OdiModules			 	= "ODI_Modules"
+
+
+NetRuleHardwareType		  = "nwDriver nwAdapter"
+NetRuleHardwareBindForm	  = " yes yes container"
+ProductKeyName = $(!NTN_SoftwareBase)"\"$(Manufacturer)"\"$(DriverName)"\CurrentVersion"
+;
+; ParamKeyname not used - not updated
+; ParamKeyName	= $(!NTN_ServiceBase)"\"$(ProductHardware$(Option)Name)"\Parameters"
+;
+
+[GeneralConstants]
+from	= ""
+to		= ""
+ExitCodeOk	 	= 0
+ExitCodeCancel = 1
+ExitCodeFatal  = 2
+
+KeyNull		 		= ""
+MAXIMUM_ALLOWED	= 33554432
+RegistryErrorIndex = NO_ERROR
+KeyProduct	  		= ""
+KeyParameters		= ""
+
+TRUE			= 1
+FALSE			= 0
+NoTitle		= 0
+
+ExitState	= "Active"
+OldVersionExisted = $(FALSE)
+
+DriverPath	  = $(!STF_NTPATH)\netware
+
+[ODIParameters]
+	ODINodeAddress = ""
+	ODIDriverAdditionalParms = {}
+	ODICustomList = {}
+	ODITokenRing		= ""
+	ODITokenRingSnap	= ""
+	;
+	; File specific Parameters:
+	;   ISA LAN Driver file:
+	;		ODISlotList = {}
+	;		ODIDefaultSlot = ""
+	;	 MCA and EISA LAN Driver files:
+	;		ODISlotList = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16}
+	;		ODIDefaultSlot = "2"
+	;
+	ODISlotList = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16}
+	ODIDefaultSlot = ""
+
+[date]
+	Now = {} ? $(!LIBHANDLE) GetSystemDate
+
+
+[Identify]
+
+	read-syms Identification
+
+	set Status		= STATUS_SUCCESSFUL
+	set Identifier  = $(OptionType)
+	set Media		= #("Source Media Descriptions", 1, 1)
+
+	Return $(Status) $(Identifier) $(Media)
+
+[ReturnOptions]
+
+	set Status		= STATUS_FAILED
+	set OptionList	 = {}
+	set OptionTextList = {}
+
+	set LanguageList = ^(LanguagesSupported, 1)
+	Ifcontains(i) $($0) in $(LanguageList)
+		ifstr(i) $($1) == ""
+			goto returnoptions
+		endif
+
+		set PlatformList = ^(PlatformsSupported, 1)
+		Ifcontains(i) $($1) in $(PlatformList)
+			goto returnoptions
+		else
+			set Status = STATUS_NOTSUPPORTED
+			goto finish_ReturnOptions
+		endif
+	else
+		set Status = STATUS_NOLANGUAGE
+		goto finish_ReturnOptions
+	endif
+
+returnoptions = +
+	set OptionList	 = ^(Options, 1)
+	set OptionTextList = {}
+
+	ForListDo $(OptionList)
+		set OptionTempString = " ODI "#($($),Title,1)" Adapter for NetWare"
+		set OptionTextList = >($(OptionTextList), $(OptionTempString) )
+	EndForListDo
+
+	set Status		 = STATUS_SUCCESSFUL
+
+finish_ReturnOptions = +
+	Return $(Status) $(OptionList) $(OptionTextList)
+
+[InstallOption]
+
+	set Option	= $($1)
+	set SrcDir	= $($2)
+	set AddCopy  = $($3)
+	set DoCopy	= $($4)
+	set DoConfig = $($5)
+
+	set LanguageList = ^(LanguagesSupported, 1)
+	Ifcontains(i) $($0) NOT-IN $(LanguageList)
+		Return STATUS_NOLANGUAGE
+	endif
+
+	set-subst LF = "\n"
+	read-syms GeneralConstants
+	read-syms FileConstants
+	read-syms ODIParameters
+	read-syms DialogConstants$(!STF_LANGUAGE)
+	ifstr(i) $(!NTN_Origination) == "NCPA"
+		set Continue = "OK"
+	endif
+	read-syms FileConstants$(!STF_LANGUAGE)
+
+	detect date
+
+;	set-title  $(Function$(Option)Title)
+
+	set to	= Begin
+	set from = Begin
+	set CommonStatus = STATUS_SUCCESSFUL
+
+	EndWait
+
+Begin = +
+
+	Ifstr(i) $(!NTN_InstallMode) == deinstall
+		set StartLabel = removeadapter
+		goto skipmakingthelists
+	else-Ifstr(i) $(!NTN_InstallMode) == Update
+		set StartLabel = UpgradeSoftware
+		goto skipmakingthelists
+	else-Ifstr(i) $(!NTN_InstallMode) == bind
+		set StartLabel = bindingadapter
+		goto skipmakingthelists
+	else-Ifstr(i) $(!NTN_InstallMode) == configure
+		set StartLabel = configureadapter
+	else
+		set DoCopy = YES
+		set AddCopy = YES
+		set StartLabel = installadapter
+		set OEM_ABANDON_OPTIONS = {}
+		set OEM_ABANDON_SOFTWARE = FALSE
+		set OEM_ABANDON_ON = TRUE
+	endif
+
+	set ParameterListNames = ^(DefaultParameterLists, 1)	; NWIRQList, NWMEMList1, etc.
+	set ListNames = ^(ODIListNamesSection, 1)					; List1, list2, ..., list6
+	set ODIKeywordList = ^(ChoicesNamesList, 1)				; Int, mem, Port, etc.
+	set ODITitleList = ^(ChoicesNamesList, 2)					; Interrupt Number, Port, etc.
+	set MSParameterList = ^(ChoicesNamesList, 3)				; InterruptNumber, IOBaseAddress, etc.
+
+	set DriverListNames = {}
+	set ODINumberofDriverLists = 0
+	ForListDo ^($(Option),0 )
+		ifcontains(i) $($) IN $(ListNames)
+			set DriverListNames = >($(DriverListNames), $($))
+		else-ifstr(i) $($) == "CUSTOM"
+			set ODICustomList = #($(Option), Custom, 1)
+		endif
+	EndForListDo
+
+	QueryListSize ODINumberofDriverLists $(DriverListNames)
+
+;
+; DriverListNames now contains the List names the selected ODI driver has (i.e. {List1, List2})
+; ODINumberofDriverLists now contains the number of lists used
+;
+
+	Debug-Output "DriverListNames = "$(DriverListNames)
+	Debug-Output "Size of DriverListNames = "$(ODINumberofDriverLists)
+
+	ForListDo $(DriverListNames)
+		set $($)Keyword = #($(Option), $($), 1)
+		ifstr $($($)Keyword) != ""
+			set $($)Default = #($(Option), $($), 3)
+
+			ifcontains(i) $($($)Keyword) IN $(ODIKeywordList)
+				set $($)Title = *($(ODITitleList), ~($(ODIKeywordList), $($($)Keyword)))
+				set ThisListName = #($(Option), $($), 2)
+				set MSParameterName$(#) = *($(MSParameterList), ~($(ODIKeywordList), $($($)Keyword)))
+				set FinalList = {}
+
+				ifcontains(i) $(ThisListName) IN $(ParameterListNames)
+					ifstr(i) #($(Option), $($), 4) == "ALL"
+						set FinalList = ^($(ThisListName), 1)
+					else
+						set CountUpTo = #($(Option), $($), 5)
+
+						ifstr(i) $(CountUpTo) == "END"
+							set CountUpTo = $(MAXIMUM_ALLOWED)
+						endif
+
+						set StartNumber = #($(Option), $($), 4))
+
+						ForListDo ^($(ThisListName), 1)
+							ifint $(#) >= $(StartNumber)
+								ifint $(#) <= $(CountUpTo)
+									set FinalList = >($(FinalList), $($))
+								endif
+							endif
+						EndForListDo
+					endif
+				else
+					;
+					; User passed in the list
+					;
+					Debug-Output "User passed in a list"
+					set $($)Title = #($(Option), $($), 2)
+					set FinalList = #($(Option), $($), 4)
+				endif
+			else
+				;
+				; User passed in a new keyword
+				;
+				Debug-Output "User passed in a new keyword"
+				set $($)Title = #($(Option), $($), 2)
+				set MSParameterName$(#) = ""
+				set FinalList = #($(Option), $($), 4)
+			endif
+		set $($)List = $(FinalList)
+		endif
+	Debug-Output "List"$(#)"Title = "$($($)Title)
+	Debug-Output "List"$(#)"Default = "$($($)Default)
+	Debug-Output "List"$(#)"Keyword = "$($($)Keyword)
+	Debug-Output "List"$(#)"List = "$($($)List)
+	Debug-Output "MSParameterName"$(#)" = "$(MSParameterName$(#))
+	EndForListDo
+
+skipmakingthelists = +
+
+	set ODILANDriverTitle = #($(Option), Title, 1)
+	Split-String #($(Option), DriverName, 2) "." SplitFileNameList
+	set ODILANDriverName = *($(SplitFileNameList), 1)
+	set ODIMediaType = #($(Option), MediaType, 1)
+	Debug-Output "ODILANDriverName = "$(ODILANDriverName)
+	Debug-Output "ODIMediaType = "$(ODIMediaType)
+
+	set from = $(fatal)
+	set to = $(fatal)
+	goto $(StartLabel)
+
+installadapter = +
+
+	Ifstr(i) $(DoCopy) == "YES"
+		;
+		;  Get source location
+		;
+		Shell $(NwSubsInf), DoAskLANSource, $(!STF_CWDDIR), $(SrcDir) YES
+
+		Ifint $($ShellCode) != $(!SHELL_CODE_OK)
+			Goto ShellCodeError
+		Else-Ifstr(i) $($R0) == STATUS_FAILED
+			Shell $(UtilityInf) RegistryErrorString "ASK_SOURCE_FAIL"
+			ifint $($ShellCode) != $(!SHELL_CODE_OK)
+				goto ShellCodeError
+			endif
+			set Error = $($R0)
+			Goto fatal
+		Else-Ifstr(i) $($R0) == STATUS_USERCANCEL
+			Goto end
+		Endif
+
+		Set SrcDir = $($R1)
+	Endif
+
+	install "Install-Option"
+
+	goto adapteroptions
+
+configureadapter = +
+	Ifstr $(KeyProduct) == $(KeyNull)
+		OpenRegKey $(!REG_H_LOCAL) "" $(!NTN_RegBase) $(MAXIMUM_ALLOWED) KeyProduct
+		Ifstr $(KeyProduct) == $(KeyNull)
+			set RegistryErrorIndex = CANNOT_FIND_COMPONENT_SERVICE
+			Debug-Output "OEMNADNH.INF: Cannot find component product key "$(!NTN_RegBase)
+			goto fatalregistry
+		Endif
+	Endif
+
+	Set AdapterNumber = ""
+
+	Shell $(UtilityInf) FindService, $(KeyProduct)
+	Ifint $($ShellCode) != $(!SHELL_CODE_OK)
+		Debug-Output "OEMNADNH.INF: FindService shell failure "$($ShellCode)
+		Goto ShellCodeError
+	Endif
+	Ifstr(i) $($R0) != NO_ERROR
+		Debug-Output "OEMNADNH.INF: FindService Error "$($R0)
+		Goto fatalregistry
+	endif
+
+	set KeyParameters = $($R2)
+	set ServiceAreaHandle = $($R1)
+
+	Ifstr $(KeyParameters) == $(KeyNull)
+		set RegistryErrorIndex = CANNOT_FIND_COMPONENT_SERVICE
+		Debug-Output "OEMNADNH.INF: Cannot find component service "$(KeyProduct)
+		goto fatalregistry
+	endif
+
+	set OldVersionExisted = $(TRUE)
+
+	set ValueName = ""
+	set ValueData = ""
+	set ValueStr  = ""
+	set ValueList = {}
+
+	GetRegValue $(KeyParameters) ODILoadName ODILoadName
+	Set CardInstanceName = *($(ODILoadName),4)
+
+	Ifstr $(CardInstanceName) == $(KeyNull)
+		set RegistryErrorIndex = CANNOT_FIND_COMPONENT_SERVICE
+		Debug-Output "OEMNADNH.INF: Cannot find CardInstanceName"
+		goto fatalregistry
+	endif
+
+	set KeyToFind = $(!NTN_ServiceBase)"\ODILOAD\ODI_MODULES\"$(CardInstanceName)
+	OpenRegKey $(!REG_H_LOCAL) ""  $(KeyToFind) $(MAXIMUM_ALLOWED) DriverKey
+	Ifstr $(DriverKey) == $(KeyNull)
+		set RegistryErrorIndex = CANNOT_FIND_COMPONENT_SERVICE
+		Debug-Output "OEMNADNH.INF: Cannot find component product key = "$(KeyToFind)
+		goto fatalregistry
+	Endif
+
+	GetRegValue $(DriverKey) Parameters ParameterList
+
+	;  get the data portion
+	set ParameterList = *($(ParameterList), 4)
+
+	Debug-Output "parameter list = "$(ParameterList)
+
+	ForListDo $(ParameterList)
+		set ThisParameterList = $($)
+		Split-String $($) " " SplitList
+		set KeyToSearchFor = *($(SplitList), 1)
+		set ValueToUse = *($(SplitList), 3)
+		Debug-Output "Keytosearchfor = "$(KeyToSearchFor)
+		Debug-Output "ValueToUse = "$(ValueToUse)
+		;
+		;   #1    #2     #3
+		; "Parm"  " "	 "Value"
+		;
+		set ValueFound = 0
+
+		;
+		; check frametypes for TOKEN-RING, TOKEN-RING_SNAP
+		;
+		ifstr(i) $(KeyToSearchFor) == "FRAME"
+			;
+			; Don't append Frametypes to ODIAdditionalParms, so set ValueFound = 1
+			;
+			set ValueFound = 1
+			QueryListSize SplitListSize $(SplitList)
+			ifstr(i) *($(SplitList), 3) == "TOKEN-RING"
+				set LastParameter = *($(SplitList), $(SplitListSize))
+				ifstr(i) $(LastParameter) == "MSB"
+					set ODITokenRing = "MSB"
+				else-ifstr(i) $(LastParameter) == "LSB"
+					set ODITokenRing = "LSB"
+				else
+					;
+					; Not there, so default to MSB
+					;
+					set ODITokenRing = "MSB"
+				endif
+			else-ifstr(i) *($(SplitList), 3) == "TOKEN-RING_SNAP"
+				set LastParameter = *($(SplitList), $(SplitListSize))
+				ifstr(i) $(LastParameter) == "MSB"
+					set ODITokenRingSnap = "MSB"
+				else-ifstr(i) $(LastParameter) == "LSB"
+					set ODITokenRingSnap = "LSB"
+				else
+					;
+					; Not there, so default to MSB
+					;
+					set ODITokenRingSnap = "MSB"
+				endif
+			endif
+		;
+		; Check for NODE parameter
+		;
+		else-ifstr(i) $(KeyToSearchFor) == "NODE"
+			set ODINodeAddress = $(ValueToUse)
+			set ValueFound = 1
+		;
+		; Check for SLOT parameter
+		;
+		else-ifstr(i) $(KeyToSearchFor) == "SLOT"
+			set ODIDefaultSlot = $(ValueToUse)
+			set ValueFound = 1
+		;
+		; Check for BUSNAME parameter - ignore it
+		;
+		else-ifstr(i) $(KeyToSearchFor) == "BUSNAME"
+			set ValueFound = 1
+		;
+		; Check for BUSTYPE parameter
+		;
+		else-ifstr(i) $(KeyToSearchFor) == "BUSTYPE"
+			set ValueFound = 1
+			set BusInterfaceType = $(ValueToUse)
+		;
+		; Check for BUS parameter
+		;
+		else-ifstr(i) $(KeyToSearchFor) == "BUS"
+			set ValueFound = 1
+			set BusNumber = $(ValueToUse)
+		endif
+
+		ForListDo $(DriverListNames)
+			ifstr(i) $(KeyToSearchFor) == $($($)Keyword)
+				set $($)Default = $(ValueToUse)
+				set ValueFound = 1
+				ifcontains(i) $(ValueToUse) NOT-IN $($($)List)
+					set $($)List = >($($($)List), $(ValueToUse))
+				endif
+			endif
+		EndForListDo
+
+		Debug-Output "Value Found = "$(ValueFound)
+
+		ifint $(ValueFound) == 0
+			set FoundInCustom = 0
+
+			ForListDo $(ODICustomList)
+				ifstr(i) $($) == $(ThisParameterList)
+					set FoundInCustom = 1
+				endif
+			EndForListDo
+
+			Debug-Output "Found in Custom = "$(FoundInCustom)
+
+  			ifint $(FoundInCustom) == 0
+				ifstr $(ODIDriverAdditionalParms) == {}
+					set ODIDriverAdditionalParms = $(KeyToSearchFor)" "$(ValueToUse)
+				else
+					set ODIDriverAdditionalParms = >($(ODIDriverAdditionalParms), $(KeyToSearchFor)" "$(ValueToUse))
+				endif
+			endif
+		endif
+	EndForListDo
+
+	Debug-Output "AdditionalParms = "$(ODIDriverAdditionalParms)
+	Debug-Output "CustomList = "$(ODICustomList)
+	Debug-Output "BusType = "$(BusInterfaceType)
+	Debug-Output "Bus = "$(BusNumber)
+
+
+adaptersetup =+
+
+	goto adapteroptions
+adapteroptions = +
+	set from = adapteroptions
+
+	LoadLibrary "NetWare for MS Windows NT" nwsetup.dll NwLibHandle
+	SetHelpFile $(!STF_WINDOWSSYSPATH)"\nls\english\nwnthelp.hlp" $(!MinimumID) $(!MaximumID)
+
+dothedialog = +
+	ifint $(ODINumberofDriverLists) == 0
+		ifstr(i) $(!NTN_InstallMode) == configure
+			read-syms NoParms$(!STF_LANGUAGE)
+			ui start "WorkstationDLG" $(NwLibHandle)
+
+			ifstr(i) $(DLGEVENT) == "CONTINUE"
+				Debug-Output "OK hit"
+			else-ifstr(i) $(DLGEVENT) == "EXIT"
+			;
+			; user selected the advanced button
+			;
+				goto doadvancedsettings
+			endif
+		endif
+	else
+		read-syms LANDriverDlg$(!STF_LANGUAGE)
+
+		set NotifyFields = {}
+		set ComboListItemsIn = {}
+		set ComboListItemsOut = {}
+		ForListDo $(DriverListNames)
+			set NotifyFields = >($(NotifyFields), "NO")
+			set ComboListItemsIn = >($(ComboListItemsIn), $($)List)
+			ifstr $($($)Value) == ""
+				set $($)Value = $($($)Default)
+			endif
+			set ComboListItemsOut = >($(ComboListItemsOut), $($)Value)
+		EndForListDo
+
+		ui start "LANDriverParms" $(NwLibHandle)
+
+		ifstr(i) $(DLGEVENT) == "CONTINUE"
+			Debug-Output "Continue hit"
+		else-ifstr(i) $(DLGEVENT) == "BACK"
+			Debug-Output "Action: CANCEL. Bye."
+			set CommonStatus = STATUS_USERCANCEL
+			ui pop 1
+			FreeLibrary $(NwLibHandle)
+			goto end
+		else-ifstr(i) $(DLGEVENT) == "EXIT"
+
+doadvancedsettings =+
+		;
+		; user selected the advanced button
+		;
+			Debug-Output "Action: ADVANCED DIALOG"
+			read-syms AdvancedDialog$(!STF_LANGUAGE)
+			set RadioIn = {}
+			set ComboListItemsIn = {}
+			set ComboListItemsOut = {}
+			set ComboOut = $(ODIDefaultSlot)
+
+			ifstr(i) $(ODIMediaType) == "TOKEN-RING"
+				ifstr(i) $(ODISlotList) == {}
+					set DlgTemplate = "DLG_ADVANCEDDRIVER3"
+				else
+					set ComboListItemsIn = { ODISlotList }
+					set ComboListItemsOut = { ComboOut }
+					set DlgTemplate = "DLG_ADVANCEDDRIVER1"
+				endif
+
+				ifstr(i) $(ODITokenRing) == "LSB"
+					set RadioIn = { 2 }
+				else
+					set RadioIn = { 1 }
+				endif
+
+				ifstr(i) $(ODITokenRingSnap) == "LSB"
+					set RadioIn = >($(RadioIn), "4")
+				else
+					set RadioIn = >($(RadioIn), "3")
+				endif
+			else
+				ifstr(i) $(ODISlotList) == {}
+					set DlgTemplate = "DLG_ADVANCEDDRIVER4"
+				else
+					set ComboListItemsIn = { ODISlotList }
+					set ComboListItemsOut = { ComboOut }
+					set DlgTemplate = "DLG_ADVANCEDDRIVER2"
+				endif
+			endif
+
+			ui start "AdvancedDialog" $(NwLibHandle)
+			ui pop 1
+
+			ifstr(i) $(DLGEVENT) == "CONTINUE"
+				set ODINodeAddress = *($(EditTextOut), 1)
+				set ODIDefaultSlot = *($(ComboOut), 1)
+				ifcontains "2" IN $(RadioOut)
+					set ODITokenRing = "LSB"
+				else
+					set ODITokenRing = "MSB"
+				endif
+				ifcontains "4" IN $(RadioOut)
+					set ODITokenRingSnap = "LSB"
+				else
+					set ODITokenRingSnap = "MSB"
+				endif
+			else-ifstr(i) $(DLGEVENT) == "BACK"
+				Debug-Output "Action: CANCEL. Bye."
+			endif
+
+			goto dothedialog
+		else
+			Debug-Output "Action: unknown. Bye."
+			ui pop 1
+			FreeLibrary $(NwLibHandle)
+			goto end
+		endif
+
+		ui pop 1
+
+
+		ForListDo $(DriverListNames)
+			Debug-Output "List"$(#)"Value = "$($($)Value)
+		EndForListDo
+	endif
+
+	FreeLibrary $(NwLibHandle)
+
+	ifint $(OldVersionExisted) == $(TRUE)
+		ifstr(i) $(!NTN_InstallMode) == configure
+			goto writeparameters
+		endif
+	endif
+
+	StartWait
+	Shell $(UtilityInf), AddHardwareComponent, $(ODILANDriverName),$(STF_CONTEXTINFNAME),$(ProductKeyName)
+
+	ifint $($R4) != -1
+		Set OEM_ABANDON_OPTIONS = >($(OEM_ABANDON_OPTIONS), $(!NTN_SoftwareBase)"\Microsoft\Windows NT\CurrentVersion\NetworkCards\"$($R4))
+	endif
+
+	ifint $($ShellCode) != $(!SHELL_CODE_OK)
+		Debug-Output "OEMNADNH.INF: Cannot add hardware component "$($ShellCode)
+		goto ShellCodeError
+	endif
+
+	set RegistryErrorIndex = $($R0)
+
+	Ifstr(i) $(RegistryErrorIndex) != NO_ERROR
+		EndWait
+		Debug-Output "OEMNADNH.INF: Registry error: add hardware component "$(RegistryErrorIndex)
+		CloseRegKey $($R1)
+		CloseRegKey $($R2)
+		CloseRegKey $($R3)
+		goto fatalregistry
+	endif
+
+	set KeyParameters = $($R3)
+	set KeyAdapterRules = $($R2)
+	set AdapterNumber = $($R4)
+
+	Set-add TempAdapterNumber = $(AdapterNumber),0
+
+	set CardInstanceName = $(ODILANDriverName)" #"$(TempAdapterNumber)
+
+	set NewValueList = {{Manufacturer,$(NoTitle),$(!REG_VT_SZ),$(Manufacturer)},+
+						{Title,$(NoTitle),$(!REG_VT_SZ),"["$($R4)"] ODI "$(ODILANDriverTitle)" Adapter for NetWare"},+
+						{Description,$(NoTitle),$(!REG_VT_SZ),"ODI "$(ODILANDriverTitle)" Adapter for NetWare"},+
+						{ProductName,$(NoTitle),$(!REG_VT_SZ),$(ODILANDriverName)},+
+						{ServiceName,$(NoTitle),$(!REG_VT_SZ),$($R5)},+
+						{InstallDate,$(NoTitle),$(!REG_VT_DWORD),*($(Now),1)},+
+						{OdiAdapter,$(NoTitle),$(!REG_VT_DWORD),1}}
+
+	Shell  $(UtilityInf), AddValueList, $($R1), $(NewValueList)
+	ifint $($ShellCode) != $(!SHELL_CODE_OK)
+		Debug-Output "OEMNADNH.INF: AddValueList ShellCode error "$($ShellCode)
+		goto ShellCodeError
+	endif
+
+	CloseRegKey $($R1)
+
+	set TempProdName = """"$(ODILANDriverName)$(AdapterNumber)""""
+	set TempBindForm = $(TempProdName)$(NetRuleHardwareBindForm)
+
+	set NewValueList = {{type,$(NoTitle),$(!REG_VT_SZ),$(NetRuleHardwareType)},+
+						{bindform,$(NoTitle),$(!REG_VT_SZ),$(TempBindForm)}, +
+						{InfOption,$(NoTitle),$(!REG_VT_SZ),$(Option)}}
+
+	Shell  $(UtilityInf), AddValueList, $(KeyAdapterRules), $(NewValueList)
+	ifint $($ShellCode) != $(!SHELL_CODE_OK)
+		Debug-Output "OEMNADNH.INF: AddValueList ShellCode error "$($ShellCode)
+		goto ShellCodeError
+	endif
+
+	set RegistryErrorIndex = $($R0)
+
+	Ifstr(i) $(RegistryErrorIndex) != NO_ERROR
+		EndWait
+		Debug-Output "OEMNADNH.INF: AddValueList Registry error "$(RegistryErrorIndex)
+		CloseRegKey $(KeyParameters)
+		CloseRegKey $(KeyAdapterRules)
+		goto fatalregistry
+	endif
+
+	CloseRegKey $(KeyAdapterRules)
+
+	SetRegValue $(KeyParameters) {OdiLoadName,$(NoTitle),$(!REG_VT_SZ),$(CardInstanceName)}
+	
+	goto writeparameters
+
+writeparameters = +
+
+	Shell $(NwSubsInf), NwGetNICBusInfo, $(CardInstanceName) $(BusInterfaceType) $(BusNumber)
+
+	ifint $($ShellCode) != $(!SHELL_CODE_OK)
+		Debug-Output "OEMNADNH.INF: NwGetNICBusInfo ShellCode error "$($ShellCode)
+		goto ShellCodeError
+	endif
+	ifint $($R0) != $(!SHELL_CODE_OK)
+		goto ShellCodeError
+	endif
+
+	set BusNumber = $($R1)	
+	set BusTypeName = $($R2)
+	set BusInterfaceType = $($R3)
+ 	
+ 	set NewValueList = {{MediaType,$(NoTitle),$(!REG_VT_DWORD),1}}
+
+	ForListDo $(DriverListNames)
+		ifstr $(MSParameterName$(#)) != ""
+			set-hextodec DecValue = $($($)Value)
+			set ValueToAdd = {$(MSParameterName$(#)),$(NoTitle),$(!REG_VT_DWORD), $(DecValue)}
+			set NewValueList = >($(NewValueList), $(ValueToAdd))
+		endif
+	EndForListDo
+	
+	Shell  $(UtilityInf), AddValueList, $(KeyParameters), $(NewValueList)
+
+	CloseRegKey $(KeyParameters)
+
+	ifint $($ShellCode) != $(!SHELL_CODE_OK)
+		Debug-Output "OEMNADNH.INF: AddValueList ShellCode error "$($ShellCode)
+		goto ShellCodeError
+	endif
+
+	set RegistryErrorIndex = $($R0)
+
+	Ifstr(i) $(RegistryErrorIndex) != NO_ERROR
+		Debug-Output "OEMNADNH.INF: AddValueList Registry error "$($ShellCode)
+		goto fatalregistry
+	endif
+
+	EndWait
+
+	set PromptForSrcRouting = "FALSE"
+
+	Ifstr(i) $(ODIMediaType) == "ETHERNET"
+		set ODIParmList = {"Frame ETHERNET_802.2", +
+						   "Frame ETHERNET_802.3", +
+						   "Frame ETHERNET_II", +
+						   "Frame ETHERNET_SNAP" +
+						   "BusName "$(BusTypeName) +
+  						   "BusType "$(BusInterfaceType) +
+						   "Bus "$(BusNumber) }
+	else-Ifstr(i) $(ODIMediaType) == "TOKEN-RING"
+		set ODIParmList = {"Frame TOKEN-RING "$(ODITokenRing), +
+						   "Frame TOKEN-RING_SNAP "$(ODITokenRingSnap) +
+						   "BusName "$(BusTypeName) +
+  						   "BusType "$(BusInterfaceType) +
+						   "Bus "$(BusNumber) }
+		set PromptForSrcRouting = "TRUE"
+
+	else-Ifstr(i) $(ODIMediaType) == "FDDI"
+		set ODIParmList = {"Frame FDDI_802.2", +
+						   "Frame FDDI_SNAP" +
+						   "BusName "$(BusTypeName) +
+  						   "BusType "$(BusInterfaceType) +
+						   "Bus "$(BusNumber) }
+		set PromptForSrcRouting = "TRUE"
+
+	else
+		set ODIParmList = {}
+	endif
+
+	Debug-Output "Framenames = "$(ODIParmList)
+
+
+	;
+	; Build List to send to ODI_MODULES\CARDNAME
+	;
+	ForListDo $(DriverListNames)
+		set ODIParmList = >($(ODIParmList), $($($)Keyword)" "$($($)Value))
+	EndForListDo
+
+	ifstr $(ODINodeAddress) != ""
+		set ODIParmList = >($(ODIParmList), "Node "$(ODINodeAddress))
+	endif
+
+	ifstr $(ODIDefaultSlot) != ""
+		set ODIParmList = >($(ODIParmList), "Slot "$(ODIDefaultSlot))
+	endif
+
+	ForListDo $(ODIDriverAdditionalParms)
+		ifstr $($) != ""
+			set ODIParmList = >($(ODIParmList), $($))
+		endif
+	EndForListDo
+
+	ForListDo $(ODICustomList)
+		ifstr $($) != ""
+			set ODIParmList = >($(ODIParmList), $($))
+		endif
+	EndForListDo
+
+
+	Debug-Output "ODIParmList = "$(ODIParmList)
+
+
+	Shell $(NwSubsInf) NwAddOdiLoadModule $(CardInstanceName) $(AdapterNumber) $(ODIParmList)
+
+	Ifint $($ShellCode) != $(!SHELL_CODE_OK)
+		Debug-Output "OEMNADNH.INF: NwAddOdiLoadModule failure "$($ShellCode)
+		Goto ShellCodeError
+	Endif
+
+	Set ErrorString = $($R0)
+	Ifstr(i) $(ErrorString) != NO_ERROR
+		Debug-Output "OEMNADNH.INF: NwAddOdiLoadModule "$(ErrorString)
+		goto fatalregistry
+	Endif
+
+	Debug-Output "PromptForSrcRouting = "$(PromptForSrcRouting)
+	Ifstr(i) $(PromptForSrcRouting) == "TRUE"
+		set DlgType	  = "MessageBox"
+	set STF_MB_TITLE = "Configure ODI Source Routing"
+	set STF_MB_TEXT  = "Use ODI Source Routing support?"
+	set STF_MB_TYPE  = 3
+	set STF_MB_ICON  = 1
+	set STF_MB_DEF	= 2
+	ui start "SourceRoutingBox"
+	ifstr(i) $(DLGEVENT) == "YES"
+		 OpenRegKey $(!REG_H_LOCAL) "" $(!NTN_ServiceBase)"\ROUTE" $(MAXIMUM_ALLOWED) KeySetup
+		 Ifstr(i) $(KeySetup) != ""
+			  SetRegValue $(KeySetup) {Start,$(NoTitle),$(!REG_VT_DWORD), "2"}
+				  CloseRegKey $(KeySetup)
+				  Debug-Output "OEMNADNA.INF: Start value set to Automatic (0x2)"
+		 Endif
+	else
+		 OpenRegKey $(!REG_H_LOCAL) "" $(!NTN_ServiceBase)"\ROUTE" $(MAXIMUM_ALLOWED) KeySetup
+		 Ifstr(i) $(KeySetup) != ""
+			  SetRegValue $(KeySetup) {Start,$(NoTitle),$(!REG_VT_DWORD), "4"}
+				  CloseRegKey $(KeySetup)
+				  Debug-Output "OEMNADNA.INF: Start value set to Disabled (0x4)"
+		 Endif
+	endif
+	Endif
+
+	Ifstr(i) $(!NTN_InstallMode) == install
+		Set OdiAdapterInstalledOkay = "1"
+	Endif
+	goto successful
+
+bindingadapter =+
+	set Error = "Binding: Sorry, not yet implemented."
+	goto fatal
+
+removeadapter = +
+	Shell $(NwSubsInf) NwRemoveAdapter $(!NTN_RegBase)
+	Ifint $($ShellCode) != $(!SHELL_CODE_OK)
+		Debug-Output "OEMNADNH.INF: Shell Error NwRemoveAdapter "$($ShellCode)
+	Endif
+
+	Shell $(NwSubsInf) NwRemoveNtAdapter $(ProductKeyName) $(Manufacturer)
+	Ifint $($ShellCode) != $(!SHELL_CODE_OK)
+		Debug-Output "OEMNADNH.INF: NwRemoveNtAdapter "$($ShellCode)
+		goto ShellCodeError
+	Endif
+
+	set RegistryErrorIndex = $($R0)
+
+	Ifstr(i) $(RegistryErrorIndex) != NO_ERROR
+		Debug-Output "OEMNADNH.INF: NwRemoveNtAdapter "$(RegistryErrorIndex)
+		Ifstr(i) $(RegistryErrorIndex) == "SHELL_CODE_ERROR"
+			goto ShellCodeError
+		Endif
+		goto fatalregistry
+	Endif
+
+	goto end
+
+UpgradeSoftware = +
+	OpenRegKey $(!REG_H_LOCAL) "" $(!NTN_RegBase) +
+		  $(MAXIMUM_ALLOWED) NetworkCardKey
+	Ifstr(i) $(NetworkCardKey) != $(KeyNull)
+		GetRegValue $(NetworkCardKey),"ServiceName", ServiceNameInfo
+		set ServiceName = *($(ServiceNameInfo), 4)
+
+		OpenRegKey $(NetworkCardKey) "" "NetRules" +
+			$(MAXIMUM_ALLOWED) NetRuleKey
+		Ifstr(i) $(NetRuleKey) != $(KeyNull)
+		else
+			goto fatalregistry
+		endif
+
+		CloseRegKey $(NetRules)
+		CloseRegKey $(NetworkCardKey)
+	else
+		goto fatalregistry
+	endif
+	OpenRegKey $(!REG_H_LOCAL) "" +
+		  $(!NTN_ServiceBase)"\"$(ServiceName) +
+		  $(MAXIMUM_ALLOWED) ServiceKey
+
+	Ifstr(i) $(ServiceKey) != $(KeyNull)
+		CloseRegKey $(ServiceKey)
+	else
+		goto fatalregistry
+	endif
+
+	goto end
+
+successful = +
+	goto end
+
+abandon = +
+	ForListDo $(OEM_ABANDON_OPTIONS)
+	Shell $(NwSubsInf) NwRemoveNtAdapter $(ProductKeyName) $(Manufacturer) $($)
+	Ifint $($ShellCode) != $(!SHELL_CODE_OK)
+		Debug-Output "OEMNADNH.INF: NwRemoveNtAdapter "$($ShellCode)
+		goto ShellCodeError
+	Endif
+
+		set RegistryErrorIndex = $($R0)
+
+		Ifstr(i) $(RegistryErrorIndex) != NO_ERROR
+			goto fatalregistry
+		endif
+	EndForListDo
+
+	goto end
+
+warning = +
+	Shell $(subroutineinf) SetupMessage, $(!STF_LANGUAGE), "WARNING", $(Error)
+	ifint $($ShellCode) != $(!SHELL_CODE_OK)
+		goto ShellCodeError
+	endif
+	ifstr(i) $($R1) == "OK"
+		goto $(to)
+	else-ifstr(i) $($R1) == "CANCEL"
+		goto $(from)
+	else
+		goto "end"
+	endif
+
+
+nonfatalinfo = +
+	Set CommonStatus = STATUS_USERCANCEL
+	Set Severity = STATUS
+	goto nonfatalmsg
+nonfatal = +
+	Set Severity = NONFATAL
+	goto nonfatalmsg
+nonfatalmsg = +
+	ifstr(i) $(Error) == ""
+		Set Severity = NONFATAL
+		Shell $(UtilityInf) RegistryErrorString "SETUP_FAIL"
+		ifint $($ShellCode) != $(!SHELL_CODE_OK)
+			goto ShellCodeError
+		endif
+		set Error = $($R0)
+	endif
+	Shell $(subroutineinf) SetupMessage, $(!STF_LANGUAGE), $(Severity), $(Error)
+	ifint $($ShellCode) != $(!SHELL_CODE_OK)
+		goto ShellCodeError
+	endif
+	ifstr(i) $($R1) == "OK"
+		goto $(from)
+	else
+		goto "end"
+	endif
+
+fatalregistry = +
+	Shell $(UtilityInf) RegistryErrorString $(RegistryErrorIndex)
+	ifint $($ShellCode) != $(!SHELL_CODE_OK)
+		goto ShellCodeError
+	endif
+	set Error = $($R0)
+	goto fatal
+
+fataldetect = +
+	Shell $(UtilityInf),RegistryErrorString,CANNOT_DETECT
+	ifint $($ShellCode) != $(!SHELL_CODE_OK)
+		Debug-Output "OEMNADNH.INF: ShellCode error: cannot get an error string."
+		goto ShellCodeError
+	endif
+	set Error = $($R0)
+	Goto fatal
+fatal = +
+	ifstr(i) $(Error) == ""
+		Shell $(UtilityInf) RegistryErrorString "SETUP_FAIL"
+		ifint $($ShellCode) != $(!SHELL_CODE_OK)
+			goto ShellCodeError
+		endif
+		set Error = $($R0)
+	endif
+	Shell $(subroutineinf) SetupMessage, $(!STF_LANGUAGE), "FATAL", $(Error)
+	ifint $($ShellCode) != $(!SHELL_CODE_OK)
+		goto ShellCodeError
+	endif
+
+	goto setfailed
+
+ShellCodeError = +
+	set DlgType	  = "MessageBox"
+	set STF_MB_TITLE = "Error: "$(Function$(Option)Title)
+	set STF_MB_TEXT  = "Shell Code Error"
+	set STF_MB_TYPE  = 1
+	set STF_MB_ICON  = 3
+	set STF_MB_DEF	= 1
+	ui start "Error Message"
+	goto setfailed
+
+setfailed = +
+	set CommonStatus = STATUS_FAILED
+	ifstr(i) $(OEM_ABANDON_ON) == TRUE
+		set OEM_ABANDON_ON = FALSE
+		goto abandon
+	endif
+	goto end
+
+end = +
+	goto term
+
+term = +
+	Ifstr(i) $(OdiAdapterInstalledOkay) == "1"
+		Shell $(NwSubsInf) GetOdiAdapterList
+		ifint $($R3) < 2
+			Set DlgType = "MessageBox"
+			Set STF_MB_TITLE = "NetWare ODI LAN Drivers Setup"
+			Set STF_MB_TEXT  = "The NetWare ODI Adapter was successfully installed.  "+
+							"Your NetWare installation is COMPLETE."
+			Set STF_MB_TYPE  = 1
+			Set STF_MB_ICON  = 3
+			Set STF_MB_DEF	= 1
+			ui start "Error Message"
+		Endif
+	Endif
+
+	Return $(CommonStatus)
+
+[Install-Option]
+	set STF_VITAL = ""
+
+	ifstr(i) $(AddCopy) == "YES"
+		AddSectionKeyFileToCopyList $(Option) DriverName $(SrcDir) $(!STF_WINDOWSSYSPATH)\netware
+	endif
+
+	ifstr(i) $(DoCopy) == "YES"
+		set !STF_NCPA_FLUSH_COPYLIST = TRUE
+		CopyFilesInCopyList
+	endif
+
+	ifstr(i) $(DoConfig) == "YES"
+	endif
+
+	Exit
+
+;[Install-Update]
+;	set STF_VITAL		= ""
+;	set STF_OVERWRITE	= "VERIFYSOURCEOLDER"
+;
+;	AddSectionFilesToCopyList Files-$(Option) $(SrcDir) $(!STF_WINDOWSSYSPATH)\netware
+;	AddSectionFilesToCopyList Files-Inf $(SrcDir) $(!STF_WINDOWSSYSPATH)
+;
+;	set !STF_NCPA_FLUSH_COPYLIST = TRUE
+;	CopyFilesInCopyList
+;
+;	exit
+
+[Source Media Descriptions]
+	1  = "NetWare ODI LAN Drivers Disk"  , TAGFILE = NOVELL\SERVER\4.X\OEMSETUP.INF
+[ProductType]
+STF_PRODUCT  = Winnt
+STF_PLATFORM = I386
+
+
+[DialogConstantsENG]
+Help		= "&Help"
+;Exit		= "&Cancel"
+OK		  = "OK"
+HelpContext = ""
+Continue	= "&Continue"
+Cancel	  = "&Cancel"
+Advanced = "&Advanced"
+IDH_NETWAREWRKSTATIONPARMS =  901
+IDH_NETWAREIPXBIND         =  902
+IDH_IPXSPXPARMS            =  903
+IDH_NETWORKPROTOCOL        =  904
+IDH_NETWAREODISETTINGS     =  905
+IDH_NETWARECLIENTINSTALL   =  906
+IDH_NETWARENDISODI         =  907
+IDH_NODEADDRESSOVERIDE     =  908
+IDH_RESMGRCONFIG		   =  951
+
+[LANDriverDlgENG]
+DlgType = "RadioCombination"
+DlgTemplate = "List"$(ODINumberofDriverLists)
+Caption = "ODI "$(ODILANDriverTitle)" Adapter Configuration"
+EditTextIn = ""
+EditTextLim = ""
+CBOptionsGreyed = {}
+HelpContext = $(IDH_NETWAREODISETTINGS)
+
+
+[NoParmsENG]
+DlgType = "RadioCombination"
+DlgTemplate = "NO_PARAMETERS"
+Caption = "ODI "$(ODILANDriverTitle)" Adapter Configuration"
+EditTextIn = ""
+EditTextLim = ""
+CBOptionsGreyed = {}
+HelpContext = ""
+CBOptionsGreyed = {}
+ComboListItemsIn = {}
+ComboListItemsOut = {}
+NotifyFields = {}
+
+
+[AdvancedDialogENG]
+DlgType = "RadioCombination"
+Caption = "Advanced Settings"
+EditTextIn = $(ODINodeAddress)
+EditTextLim = 13
+CBOptionsGreyed = {}
+HelpContext = $(IDH_NODEADDRESSOVERIDE)
+NotifyFields = {}
+
+
+[FileConstantsENG]
+ProCaption	= "NetWare ODI LAN Drivers Setup"
+ProCancel	= "Cancel"
+ProCancelMsg = "NetWare for Windows NT is not correctly installed.  "+
+				"Are you sure you want to cancel copying files?"
+ProCancelCap = "Network Setup Message"
+ProText1	 = "Copying:"
+ProText2	 = "To:"
+
+[ChoicesNamesList]
+"Int",				"Interrupt Number",	"InterruptNumber"
+"Port",				"Port",					"IOBaseAddress"
+"Mem", 				"Memory Address",		"MemoryMappedBaseAddress"
+"Dma",				"DMA Channel",			"DMAChannel"
+
+[ODIListNamesSection]
+	List1
+	List2
+	List3
+	List4
+	List5
+	List6
+
+[DefaultParameterLists]
+	NWIRQList1
+	NWIRQList2
+	NWIRQList3
+	NWIRQList4
+	NWIRQList5
+	NWIRQList6
+	NWPORTList1
+	NWPORTList2
+	NWPORTList3
+	NWPORTList4
+	NWPORTList5
+	NWPORTList6
+	NWPORTList7
+	NWDMAList1
+	NWMEMList1
+
+
+[NWIRQList1]
+Num1 =	2
+Num2 =	3
+Num3 =	4
+Num4 =	5
+Num5 =	6
+Num6 =	7
+Num7 =	9
+Num8 =	10
+Num9 =	11
+Num10 =	15
+
+[NWIRQList2]
+Num1 =	3
+Num2 =	4
+Num3 =	5
+Num4 =	9
+
+[NWIRQList3]
+Num1  =	3
+Num2  =	4
+Num3  =	5
+Num4  = 6
+Num5  = 7
+Num6  = 9
+Num7  = 10
+Num8  = 11
+Num9  = 12
+Num10 = 15
+
+[NWIRQList4]
+Num1 =	3
+Num2 =	4
+Num3 =	5
+Num4 =	7
+Num5 =	9
+Num6 =	10
+Num7 =	11
+Num8 =	15
+
+[NWIRQList5]
+Num1 =	3
+Num2 =	4
+Num3 =	5
+Num4 =  6
+Num5 =	7
+Num6 =	9
+Num7 =	10
+Num8 =	11
+Num9 =	12
+
+[NWIRQList6]
+Num1 =	2
+Num2 =	3
+Num3 =	4
+Num4 =	5
+Num5 =	10
+Num6 =	11
+Num7 =  12
+Num8 =	15
+
+[NWPORTList1]
+Num1  = 200
+Num2  = 208
+Num3  = 210
+Num4  = 218
+Num5  = 220
+Num6  = 228
+Num7  = 230
+Num8  = 238
+Num9  = 240
+Num10 = 248
+Num11 = 250
+Num12 = 258
+Num13 = 260
+Num14 = 268
+Num15 = 270
+Num16 = 278
+Num17 = 280
+Num18 = 288
+Num19 = 290
+Num20 = 298
+Num21 = 2A0
+Num22 = 2A8
+Num23 = 2B0
+Num24 = 2B8
+Num25 = 2C0
+Num26 = 2C8
+Num27 = 2D0
+Num28 = 2D8
+Num29 = 2E0
+Num30 = 2E8
+Num31 = 2F0
+Num32 = 2F8
+Num33 = 300
+Num34 = 308
+Num35 = 310
+Num36 = 318
+Num37 = 320
+Num38 = 328
+Num39 = 330
+Num40 = 338
+Num41 = 340
+Num42 = 348
+Num43 = 350
+Num44 = 358
+Num45 = 360
+Num46 = 368
+Num47 = 370
+Num48 = 378
+Num49 = 380
+Num50 = 388
+Num51 = 390
+Num52 = 398
+Num53 = 3A0
+Num54 = 3A8
+Num55 = 3B0
+Num56 = 3B8
+Num57 = 3C0
+Num58 = 3C8
+Num59 = 3D0
+Num60 = 3D8
+Num61 = 3E0
+Num62 = 3E8
+Num63 = 3F0
+Num64 = 3F8
+
+[NWPORTList2]
+Num1  = 200
+Num2  = 220
+Num3  = 240
+Num4  = 260
+Num5  = 280
+Num6  = 300
+Num7  = 320
+Num8  = 340
+Num9  = 360
+Num10 = 380
+
+[NWPORTList3]
+Num1  = A20
+Num2  = A24
+
+[NWPORTList4]
+Num1  = 100
+Num2  = 120
+Num3  = 140
+Num4  = 160
+Num5  = 180
+Num6  = 1A0
+Num7  = 1C0
+Num8  = 1E0
+Num9  = 200
+Num10 = 220
+Num11 = 240
+Num12 = 260
+Num13 = 280
+Num14 = 2A0
+Num15 = 2C0
+Num16 = 2E0
+Num17 = 300
+Num18 = 320
+Num19 = 340
+Num20 = 360
+Num21 = 380
+Num22 = 3A0
+Num23 = 3C0
+Num24 = 3E0
+
+[NWPORTList5]
+Num1  = 1A20
+Num2  = 2A20
+Num3  = 3A20
+Num4  = 3A40
+Num5  = 3A60
+Num6  = 3A80
+Num7  = 3AA0
+Num8  = 4AE0
+
+[NWPORTList6]
+Num1  = 0A20
+Num2  = 1A20
+Num3  = 2A20
+Num4  = 3A20
+Num5  = 3A60
+Num6  = 1000
+Num7  = 2000
+Num8  = 3000
+Num9  = 4000
+Num10 = 5000
+Num11 = 6000
+Num12 = 7000
+Num13 = 8000
+
+[NWPORTList7]
+Num1  = 240
+Num2  = 280
+Num3  = 2C0
+Num4  = 300
+Num5  = 320
+Num6  = 340
+Num7  = 360
+
+[NWMEMList1]
+Num1 = C0000
+Num2 = C4000
+Num3 = C8000
+Num4 = CC000
+Num5 = D0000
+Num6 = D4000
+Num7 = D8000
+Num8 = DC000
+
+[NWDMAList1]
+Num1 = 1
+Num2 = 2
+Num3 = 3
+Num4 = 4
+Num5 = 5
+Num6 = 6
+Num7 = 7
+
+
+;
+;	See the documentation on "Building your own OEMSETUP.INF" for more information.
+;
+;  List order for Option Names
+;	ALL INDEXES ARE ONE-BASED (i.e. the first item in the list is number "1")
+;
+
+
+; **************************************************************************
+; *  ODI LAN DRIVER SECTION                                                *
+; **************************************************************************
+
+[Options]
+	ODI_PCNETPCI
+;	ODI_PCNET32
+	ODI_PCNETPNP
+;	ODI_PCNETISA
+
+
+[ODI_PCNETPCI]
+Title = "AMD PCNet Family (EtherTeam PCI) Adapter for NetWare."
+DriverName = 1, PCNTNW.LAN
+MediaType = "ETHERNET"
+Custom = {"BUSTYPE","BOARD","FDUP","LED0","LED1","LED2"}
+List1 = "BUSTYPE", "Bustype Parameter", "PCI", {"PCI","PCI1","PCI2"}
+List2 = "BOARD", "Physical Board Number", "1", {"1","2","3","4"}
+List3 = "FDUP", "Full Duplex Support", "DON'TCARE", {"DON'TCARE","OFF","UTP","AUI"}
+List4 = "LED0","LED0 Value","DON'TCARE",{"DON'TCARE","00C0","00B0","4088","0081",}
+List5 = "LED1","LED1 Value","DON'TCARE",{"DON'TCARE","00C0","00B0","4088","0081",}
+List6 = "LED3","LED3 Value","DON'TCARE",{"DON'TCARE","00C0","00B0","4088","0081",}
+
+[ODI_PCNET32]
+Title = "AMD PCNet Network Driver for PCNet-32."
+DriverName = 1, PCNTNW.LAN
+MediaType = "ETHERNET"
+Custom = {"BUSTYPE","BOARD","LED0","LED1","LED2","LED3"}
+List1 = "BUSTYPE", "Bustype Parameter", "VESA", {"VESA"}
+List2 = "BOARD", "Physical Board Number", "1", {"1","2","3","4"}
+List3 = "LED0","LED0 Value","DON'TCARE",{"DON'TCARE","00C0","00B0","4088","0081",}
+List4 = "LED1","LED1 Value","DON'TCARE",{"DON'TCARE","00C0","00B0","4088","0081",}
+List5 = "LED2","LED2 Value","DON'TCARE",{"DON'TCARE","00C0","00B0","4088","0081",}
+List6 = "LED3","LED3 Value","DON'TCARE",{"DON'TCARE","00C0","00B0","4088","0081",}
+
+[ODI_PCNETPNP]
+Title = "AMD PCNet Family (EtherTeam ISA) Adapter for NetWare."
+DriverName = 1, PCNTNW.LAN
+MediaType = "ETHERNET"
+Custom = {"BUSTYPE","BOARD","FDUP","LED0","LED1","LED2"}
+List1 = "BUSTYPE", "Bustype Parameter", "PNP", {"PNP"}
+List2 = "BOARD", "Physical Board Number", "1", {"1","2","3","4"}
+List3 = "FDUP", "Full Duplex Support", "DON'TCARE", {"DON'TCARE","OFF","UTP","AUI"}
+List4 = "LED0","LED0 Value","DON'TCARE",{"DON'TCARE","00C0","00B0","4088","0081",}
+List5 = "LED1","LED1 Value","DON'TCARE",{"DON'TCARE","00C0","00B0","4088","0081",}
+List6 = "LED3","LED3 Value","DON'TCARE",{"DON'TCARE","00C0","00B0","4088","0081",}
+
+[ODI_PCNETISA]
+Title = "AMD PCNet Network Driver for PCNetISA."
+DriverName = 1, PCNTNW.LAN
+MediaType = "ETHERNET"
+Custom = {"LED0","LED1","LED2"}
+List1 = "PORT", NWPORTList2, "300", 6, 9
+List2 = "INT", NWIRQList2, "3", ALL
+List3 = "DMA", "DMA Channel", "5", {3,5,6,7}
+List4 = "LED0","LED0 Value","DON'TCARE",{"DON'TCARE","00C0","00B0","4088","0081",}
+List5 = "LED1","LED1 Value","DON'TCARE",{"DON'TCARE","00C0","00B0","4088","0081",}
+List6 = "LED2","LED2 Value","DON'TCARE",{"DON'TCARE","00C0","00B0","4088","0081",}
+

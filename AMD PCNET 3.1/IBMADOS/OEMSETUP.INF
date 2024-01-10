@@ -1,0 +1,22 @@
+[data]
+type=network
+version="3.11.000"
+
+[disks]
+  z=.," PCNET Family Ethernet adapter Driver Disk", diskz
+
+[netcard]
+amd$pcntnd="AMD PCnet Family (EtherTeam PCI/ISA) Adapter",0,ndis,ethernet,real,amd$pcntnd,amd$pcntnd_nif
+
+[amd$pcntnd]
+devdir=z:pcntnd.dos
+device=pcntnd.dos,@devdir\pcntnd.dos
+
+
+[amd$pcntnd_nif]
+drivername=PCNTND$
+param=TP,"Twisted Pair Interface",keyonly,,,0x02
+param=maxmulticasts,"Maximum number of multicast addresses",int,"10,50,1",10,0x10
+param=txbuffers,"Allocated transmit buffers",text,"1,2,4,8",4,0x10
+param=rxbuffers,"Allocated receive buffers",text,"1,2,4,8",4,0x10
+

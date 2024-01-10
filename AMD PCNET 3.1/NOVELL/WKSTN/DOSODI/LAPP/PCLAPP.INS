@@ -1,0 +1,72 @@
+InS_StArT
+PCLAPP.COM
+1.0
+^AMD PCNet Family (EtherTeam PCI/ISA) Lapp Driver,PCLAPP.COM,IE0
+?The "PCLAPP.COM" driver supports AMD PCNet family chips.
+!OIE0(BUSTYPE)PCNet Device
+?If you know the device type, you can specify here.
+PCI
+PCI1
+PCI2
+VESA
+PNP
+!OIE0(PORT)Base I/O Port
+?You can specify the I/O port address, or let the driver scan for you.
+200
+220
+240
+260
+280
+2A0
+2C0
+2E0
+300
+320
+340
+360
+380
+3A0
+3C0
+3E0
+!OIE0(INT)Hardware Interrupt
+?If you use PCNetISA, you must select a interrupt number.
+3
+4
+5
+9
+10
+11
+15
+!OIE0(DMA)DMA Channel
+?If you use PCNetISA, you must select a DMA channel.
+3
+5
+6
+7
+$OIE0(LED0 Value)Optional LED0 value
+0
+FFFF
+$OIE0(LED1 Value)Optional LED1 value
+0
+FFFF
+$OIE0(LED2 Value)Optional LED2 value
+0
+FFFF
+$OIE0(LED3 Value)Optional LED3 value
+0
+FFFF
+!OIE0()Optional Keyword
+TP
+FASTISA
+DMAROTATE
+$OIE0(NODE ADDRESS)Optional Node Address
+0
+7FFFFFFFFFFF
+*RIE0(FRAME)Media Frame Type(s)
+?NOTE: Ethernet_802.2 is now the default frame type for ODI drivers. Existing LANs may be using Ethernet_802.3.
+@Ethernet_802.2
+Ethernet_802.3
+Ethernet_II
+Ethernet_SNAP
+InS_EnD
+

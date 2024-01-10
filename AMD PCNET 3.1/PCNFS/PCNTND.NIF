@@ -1,0 +1,6 @@
+Model = AMD PCNet Family (EtherTeam PCI/ISA) Adapter
+Path = ETHERNET\PCNTND
+DeviceDriver = PCNTND.DOS
+DeviceName = PCNTND$
+Type = NDIS
+

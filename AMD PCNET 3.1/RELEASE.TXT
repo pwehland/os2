@@ -1,0 +1,491 @@
+              
+              ________________________________________________
+              AMD PCnet Software Release 3.1 February 12, 1996
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is the binary final release of PCnet Revision 3.1 software. The
+original AMD release is contained on 6 diskettes labeled 1 through 6
+(described below) of which diskettes 4, 5 and 6 are formatted with Unix
+file systems. Only diskettes 1, 2 and 3 are in DOS FAT format.
+    
+    Disk 1 - NDIS 2, ODI, Packet Driver, NDIS 3.x for WFW 3.11 and Windows 95
+    Disk 2 - NDIS 2, NDIS 3.x for Windows NT 3.xx
+             SCO UNIX Open Server 5.0 MDI driver, Unixware 2.0 DLPI driver 
+             Desktop Management Interface support
+    Disk 3 - Novell Support files, Packet Driver Source, Generic BootROM
+    Disk 4 - SCO UNIX ODT 3.0 LLI Driver
+    Disk 5 - UNIXWARE 1.1 DLPI Driver
+    Disk 6 - Sun Solaris Driver
+
+NOTE that disk layouts and numbering have changed since v3.0 .
+
+The elements of this release are:
+
+    ODI Driver (DOS, OS/2, Server)
+    NDIS 2.0.1 Driver (DOS, OS/2)
+    NDIS 3.X Driver (for WFW 3.11; NT versions 3.1, 3.5 and 3.51; Win95)
+    SCO UNIX Driver (SCO ODT 3.0, SCO Open Server 5.0)
+    Sun Solaris Driver (for v2.4)
+    Novell UNIXWARE Driver (for v1.1 and 2.0)
+    Packet Driver
+    Generic BootROM
+    AMInstall (Generic Installation utility)
+    DMInstall (DMI Installation utility)
+
+Of these programs, the following have changed since Revision 3.0:
+
+    ODI (DOS)
+    NDIS 2.0.1 (DOS, OS/2)
+    NDIS 3.X (WIN95, NT 3.51)
+    UnixWare 2.0
+    Packet Driver
+    DMInstall
+    DMI Instrumentation for Windows
+
+                  
+              ______________________________________
+              ICL Software Release 3.1 March 8, 1996
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ICL Revision 3.1 binary release is customised from the original
+AMD release and is distributed among the 2 diskettes as follows:
+
+    Disk 1 - NDIS2, NDIS3 (including WinNT 3.51, Win95), ODI, Packet
+             Driver, Novell Support Files
+    Disk 2 - Installation Utility, Generic Boot ROM, Desktop Management
+             Interface support
+
+
+NOTE!  All the UNIX drivers, which are excluded from this ICL release,
+       may be obtained separately.
+
+
+DRIVER CHANGES v3.0 to v3.1
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1. ODI (DOS)
+
+    - Minor performance enhancement.
+
+2. NDIS 2.0.1 (DOS and OS/2)
+
+    - Removed unnecessary i/o delay macro.
+    - Resolved PCI bridge and 'split' PCI bridge problems.
+
+3. NDIS 3.1 (W95 and NT3.51)
+
+    - Enhanced small packet performance substantially.
+    - Resolved PCI bridge and 'split' PCI bridge problems.
+    - Simultaneously supports more than 3 PCnet devices.
+    - Supports 32 Bit DMA Addressing for PCI and VL Devices.
+    - Changed INF file to improve driver upgrade in Windows 95.
+
+4. Packet Driver
+
+    - Implemented promiscuous mode.
+    - Fixed FDUP keyword bugs.
+
+5. Unixware 2.0
+
+    - Removed limitation preventing driver from loading above 16Mb.
+
+6.  AMInstall
+
+    - Fixed several problems related to memory size, such as system hang
+      up, system reset, returning to DOS prompt without doing anything.
+
+    - AMINSTAL.BAT has been introduced to work around some boundary
+      condition errors at low memory thresholds. Users should now run 
+      AMINSTAL.BAT instead of AMINSTAL.exe (AMINSTAL.EXE has been renamed 
+      to AMINST.EXE). AMINSTAL.BAT first checks if at least 375K RAM is 
+      left in the system, if so, it invokes AMINST.EXE. Otherwise a message 
+      is displayed on the screen indicating that more free RAM is needed. At 
+      this point, the installation is aborted.
+
+    - Add P1/P2 support: users now can program PCnet PCI Devices thru Aminstal.
+
+    - Add ISA_Duo support: users can configure ISA-Duo card to legacy mode
+      by selecting "Manual Mode", or configure it to PnP mode by selecting
+      "PnP mode" in "Custom" Window.
+
+    - The hang up problem when running from a write-protected disk has been
+      fixed.
+
+    - A work around for an AMI Plug-n-Play BIOS bug has been implemented.
+
+    - Misleading information of BOOTROM address for ISA+/ISA-II devices has
+      been fixed.
+
+    - BOOTROM information for PCI device has been changed to "Auto" instead 
+      of "Disabled".
+
+    - Now restores your previous configuration when you program a 
+      ISA+/ISA-II device to PnP mode and later on you want to change it to 
+      legacy (Manual configuration) mode.
+
+    - Fixed RADIO_BUTTON/CHECK_BOX not grayed out problem.
+
+    - Built relationship between Media selection button and Full-Duplex 
+      button. Whenever Full-Duplex button is selected, media selection 
+      button will be changed to Auto selected, and whenever BNC media is 
+      selected, Full-Duplex feature will be disabled.
+
+    - Keyboard control is now more friendly.
+
+    - A hang up problem has been fixed. The problem was that configuring 
+      ISA+/ISA-II device to PnP mode/Manual mode will hang up system after
+      running Diagnosis and then returning to Custom window via Main window.
+
+    - Fixed bug when user changed configuration between "Manual" and "PnP" 
+      mode several times, the last "Manual" configuration would not be 
+      configured successfully ... even when Aminstal took a long time to 
+      complete it and reported success.
+
+    - Can now program ISA+/ISA-II/ISA-Duo adapters to have PnP configuration
+      and to make it come up active (visible) by changing item "PNP_VISIBLE"
+      in PCNET.TXT. 
+
+    - Added more shortcuts in CUSTOM/DRIVER screen.
+
+    - Fixed display for 5 PCI cards. This problem happened if you had
+      4 PCI + 1 ISA(+/II/Duo) cards in one system.
+
+    - Fixed one PCI diagnostic bug. This problem caused testing failures
+      on some mahcines
+
+    - Screens for ISA, ISA+/ISA-II/ISA-Duo and PCI have been improved.
+   
+    - Added LEGACY control bit in PCNET.TXT. This bit controls whether 
+      ISA-Duo will be a pure legacy device or a PnP device with one set of 
+      resources described in EEPROM. This change only applies to an ISA-Duo 
+      device which is configured to be in Manual Mode.
+
+    - Modified SAFET program :
+      ... fix EEPROM diagnostic problem related to the machine speed.
+      ... reduce memory size.
+      ... add TEST4 result for ISA+/II/Duo devices.
+
+7.  DMInstall
+
+    - Fixed erratic behavior when 'Tab' key pressed from an active pull
+      down menu.
+    - Introduced some changes required for the WOSL.
+
+8.  DMI Windows Instrumentation
+
+    - Updated to v2.0 DMI SDK.
+    
+9.  Flash PROM Utility (Disk 2/2)
+
+    - The delay used in programming the Setup EEPROM is now made
+      long enough.  Corrects a potential source of error in the
+      FLASH.EXE, Version 1.08.
+    - Various minor improvements done.  
+
+DRIVER CHANGES from 2.5 to 3.0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1.  DMI support has been added to the ODI (DOS/OS2), NDIS2 (DOS/OS2), and
+    WFW NDIS 3 Drivers. The following procedure can be used to manually
+    install the required DMI files (see item #2 below for a description of
+    the automated DMI installation utility):
+
+    - Install your Pcnet network driver for DOS, OS/2 or Windows using
+      conventional installation procedures.
+
+    - Install the DMI package (SL, browser, etc) for the OS you plan to use.
+      If you do not have a specific DMI package for your system, one can
+      be obtained from the Desktop Management Task Force (DMTF). They can
+      be contacted at:
+
+          Desktop Management Task Force
+          M/S JF2-51
+          2111 N.E. 25th Avenue
+          Hillsboro, OR  97124
+          PHONE:(503) 696-9300
+          FAX:  (503) 696-9027
+
+    - From the v3.0 release diskette #2, copy the files required for the 
+      operating system you are using to the corresponding DMI directory.
+
+      for OS/2:
+
+        copy a:\dmi\pcnet.mif c:\dmi\os2\bin\mifs
+        copy a:\dmi\pcnet.dll c:\dmi\os2\bin
+
+      for DOS and Windows with real mode (ND2/ODI) Pcnet driver installed:
+
+        copy a:\dmi\pcnet.mif c:\dmi\dos\mifs
+        copy a:\dmi\pcnet.ovl c:\dmi\dos\bin
+
+      for Windows for Workgroups 3.11 with NDIS 3 driver installed:
+
+        copy a:\dmi\pcnet.mif c:\dmi\dos\mifs
+        copy a:\dmi\pcnet.exe c:\dmi\win16\bin
+
+    - Edit the pcnet.mif file's 'Serial Number', 'Installation' and
+      'Connector Type' fields.
+
+    - Install the pcnet.mif file into the SL's database. In the simplest
+      case, this can be done using the DMTF's browser.
+
+    - To verify that the installation was successfull, use your DMI
+      management application to explore the Pcnet information.
+
+2.  The manual procedure above can be effected using the DMINSTL.EXE program
+    provided on diskette #2 in the A:\DMI subdirectory. It copies the
+    necessary files. To invoke the program, place a *copy* of diskette #2
+    into drive A:. Make sure the diskette is *not* write protected. Enter
+    the following commands:
+
+    - C:>A:           <Enter>
+    - A:\>CD \DMI     <Enter>
+    - A:\DMI>DMINSTL  <Enter>
+
+    When the main panel is displayed, enter the serial number of distribution
+    package you received (if none is provided, the field can be left blank).
+    Press the Enter key or the Tab key to advance to the next field.
+    
+    The Installation Date field displays the current system time by default.
+    If you wish to change the value of this field, use the left and right
+    arrow keys to move about the text and type over the old values. Note that
+    DMINSTL uses the TZ environment variable to determine the offset from
+    GMT. If this variable is not set, DMINSTL assumes PDT (e.g. an offset
+    of +480).
+
+    Advancing to the Connector Type field, you can change its value by
+    pressing the Alt-F4 key combination and selecting the connector type in
+    use on your system. To highlight different values, use the up and down
+    arrow keys. To select one of the values, press the Enter key. To hide
+    the pull-down list and leave the selection unchanged, use the Esc key.
+
+    Finally, advancing to the Target Driver field, you can inform the
+    installation utility regarding which drivers you intend to run on the
+    system. The choices are NDIS 3 for native operation under Windows for
+    Workgroups v3.11. Or, you can select NDIS 2 / ODI for operation in DOS
+    or in WFW 3.11 using real mode DOS drivers.
+
+    Once the information has been entered, press the F10 key to initiate the
+    installation. Pressing Alt-F4 anytime prior to pressing F10 will cancel
+    the installation and return to DOS.
+
+    The DMI installation utility will invoke the DMI SL if found to assist
+    with the installation. If the SL cannot be invoked, DMINSTL will copy
+    the necessary files into the DMI directory structure -- which it will
+    create if not already present on drive C:. The next time the SL is
+    loaded, it will complete the installation on behalf of DMINSTL.
+
+    Note that DMINSTL expects to be executed out of the same directory that
+    contains the files:
+
+      PCNET.MIF
+      PCNET.EXE
+      PCNET.OVL
+
+    *IMPORTANT*
+
+    To avoid conflicts with certain TSRs, it is best to run DMINSTL in a
+    minimally configured system. In other words, booting to a plain vanilla
+    DOS system (e.g. no CONFIG.SYS and AUTOEXEC.BAT files) is preferred.
+    
+
+3.  Modifications to the bootrom are detailed in the README file on disk #2
+    the directory A:\BOOTROM.
+
+4.  Two new Unix drivers have been added to the PCnet family: one for
+    Unixware 2.0 and one for SCO Unix OpenServer 5.0. Both drivers are
+    directly supported by the OSs (they appear as selections in the menus).
+    Please use the OS utilities to install and configure the drivers.
+    The versions on diskette #6 are updated to support the "pcnet2" keyword.
+    When this keyword is set to "1" in space.c (for both drivers), it enables
+    the "don't stop on Underflow" capability of the Pcnet-PCI 2 chip. By
+    default, this keyword is set to "0". If you wish to upgrade the driver
+    distributed with the OS, you need to copy some files from diskette #6
+    and rebuild the the kernel. Follow the procedure outlined below:
+    
+    for Unixware 2.0:
+
+      cd /etc/conf/pack.d/pnt
+      doscp a:\unixware.20\driver.o Driver.o
+      doscp a:\unixware.20\space.c  Space.c
+      /etc/conf/bin/idbuild
+
+    for SCO Unix OpenServer:
+
+      cd /tmp
+      doscp a:\scounix.50\install install
+      sh install
+
+5.  Two new directories with the NDIS2 DOS driver have been added on diskette
+    #1 to support DOS client packages for IBM Lan Server 4.0. The first --
+    \IBMLSP -- should be used as a path for the "Advanced Lan Support
+    Program". The second -- \IBMADOS -- is for the "Advanced Lan DOS
+    Services" package.
+
+6.  Two new directories with the NDIS3 drivers have been included on diskette
+    #1 to support Windows 95 and Windows NT v3.51. Note that the NT 3.51
+    driver is *not* backwards compatible with Windows NT v3.1 or v3.5.
+    To install the Win95 driver from the floppy diskette, please follow
+    these instructions:
+  
+    - Using Network Setup (invoke by selecting the "Settings", "Control
+      Panel", "Network" icon), remove any previously installed PCnet Win95
+      driver.
+
+    - copy a:\win95\netamd.inf c:\windows\inf
+
+    - Then Shutdown and restart the system.
+
+    - On system reboot, if the PCnet adapter is detected, then you will be
+      prompted to install the driver from disk, and the rest of the network
+      files will be loaded from the MS distribution disks. 
+
+    - If the system does not detect the PCnet Adapter, then go to the 
+      "Settings", "Control Panel", "New Hardware" icon and choose from 
+      "Network Adapters" the type of PCnet adapter being installed.
+   
+    - On completion of installation reboot the system.
+   
+  
+NOTES
+~~~~~
+1.  When invoking the DMI Service Layer (SL.EXE), set the overlay buffer
+    size to 10k as follows:
+
+      C:\DMI\DOS\BIN> SL o=10 <Enter>
+
+2.  The OS/2 NDIS2 driver has been tested with OS/2 Warp.
+
+3.  The DOS NDIS2 driver has been tested with Banyan *client* software.
+
+4.  The Win95 and NT3.51 drivers utilize the PCI interface provided by those
+    operating systems.
+
+5.  The LAPP driver can now be certified.
+
+6.  Support for Novell's HSM 4.0 spec has been added to the DOS ODI driver
+    (this feature was accellerated and released in v2.5).
+
+7.  Formal support for the v1.1 Unixware driver will be dropped beginning
+    with the next major release of PCnet Family drivers.
+
+8.  Certain system/floppy diskette drive combinations do not tolerate
+    the default PCNET-ISA dma mode which limits bus master DMA cycles
+    by the number of transfers performed. To address the problem, the
+    default mode for ISA systems has been changed. Although the DMABR
+    register retains the default values used in v2.0 of the drivers,
+    the DMABAT register is now enabled and is programmed to a value of
+    6 microseconds by default. This mode and value is ONLY used on ISA
+    systems.
+
+    Since the exact value for the DMABAT register is system dependent, a
+    new keyword - BUSTIMER - has been introduced to allow different values
+    to be selected. Generally speaking, a larger value improves
+    performance while a smaller value improves compatibility with
+    sensitive devices that use DMA (e.g. FDD). The valid range for the
+    BUSTIMER keyword is 5 to 13 inclusive.
+
+    At present, there is a known problem with systems designed around
+    Intel's Aries PCI/ISA bridge. In particular, the default value of
+    6 microseconds in the DMABAT may cause PCNET-ISA family devices
+    to experience difficulty when exchanging packets with other network
+    nodes. This problem can be resolved by increasing the DMABAT value
+    to 7 microseconds. However, it is possible that programs that use
+    system DMA heavily or that reprogram the DMA controller for added
+    performance may encounter difficulty when DMABAT is set to 7
+    microseconds.
+
+    DMABR=Chip Default (16 transfers)
+    DMABAT=6 micro sec (for ISA systems - not used on PCI or VL).
+
+    If BUSTIMER=n given either by command line or system configuration
+    utility, DMABAT is set to n micro secs.
+
+9.  Investigation into an NDIS2-OS/2 problem uncovered a general
+    situation that affects all drivers under the following circumstances:
+
+    *   two PCNET-PCI devices are in use
+    *   the two devices are sharing an interrupt
+    *   the two devices are initialized to exchange packets on
+        the net
+    *   a soft reset occurs
+    *   the OS permits one device to be initialized and used
+        while the other remains presumably uninitialized (e.g. as
+        occurs under OS/2).
+
+    The problem is that the devices are actually in an operational state
+    because the soft reset does nothing to disable them save to prevent
+    DMAs into host memory. This implies that arriving packets will cause
+    the devices to signal an interrupt by holding the interrupt request
+    line active low. Assuming that while the system is being reset, both
+    devices receive packets (possibly broadcasts) they will both signal an
+    interrupt request. Since the system is being reset, the requests are
+    ignored. Once the reset completes, the OS loads and the first device is
+    initialized (thereby destroying its pending interrupt request), it can
+    now begin to transmit and receive packets. However, since the second
+    device has not yet been initialized, it is still holding the interrupt
+    request line low and therefore prevents the first device from
+    generating interrupts to the system.
+
+    To address this problem, the drivers that can exhibit this behavior now
+    implement an early reset algorithm. When they begin execution, they
+    reset all of the PCNET-PCI devices that they find. Naturally, early
+    reset is coordinated so as to prevent a second instance of a driver
+    from resetting a device that has already been initialized.
+
+
+10. The Novell Server ODI drivers in this release use the Novell support
+    files. The following files are required with these drivers.
+
+    Module            Ver.   Size      Date       Time      HSM Spec
+
+    MSM.NLM           2.32   20263    08-23-94     2:47P    3.2 CD
+
+    MSM31X.NLM        2.32   21303    08-23-94     2:47P    3.2 CD
+
+    ETHERTSM.NLM      2.32    9246    08-23-94     3:15P    3.2 CD
+
+    The above files are located in the #Disk1. We have also provided the
+    new monitor programs for 3.1X and 4.X servers. Please make sure that
+    you use these modules from Novell with Novell HSM compatible drivers
+    from AMD.
+
+11. Additional details regarding the problems fixed in this release can
+    be obtained from the Monthly Pcnet Problem Report published by IND
+    Marketing, AMD.
+
+12. When installing from diskettes, the DMI files are not copied, but need
+    to be copied manually. The path names at the beginning of PCNET.MIF
+    file need to be modified to comply the target directory.
+
+
+DRIVER CHANGES from 2.2 to 2.5
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The ICL Revision 3.0 binary release contains naturally also all the
+changes done from AMD PCnet release 2.2 to release 2.5.
+
+1.  The DOS ODI driver has been upgraded to support HSM 4.0.
+
+2.  A new LDI file has been introduced. The new version fixes problems
+    pertaining to the BOARD=n keyword and automatic updates of the
+    MSM and ETHERTSM NLMs.
+
+3.  Novell's latest OEMSETUP.INF file has been included in this release.
+    This file corrects problems in the previous version that prevented
+    the driver from loading correctly under Windows NT 3.5.
+
+4.  The NDIS 2 driver includes a minor initialization time fix. This
+    fix was made for correctness, eventhough no field reports
+    attributable to this error have been received.
+
+5.  Various correction were made to the NDIS 3 driver. Specifically:
+    a) A request to receive a multicast list would overwrite previous
+       requests to receive all multicasts.
+    b) The driver would return the maximum look-ahead buffer value
+       incorrectly.
+    c) The driver was not failing requests for look-ahead buffer sizes
+       that were greater than the maximum allowed.
+    d) The OID_GEN_TRANSMIT_QUEUE_LENGTH attribute is optional, and is not
+       supported by the driver. It was being mistakenly reported to the
+       wrapper as supported.
+       
+

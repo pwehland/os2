@@ -1,0 +1,10 @@
+[PCNTND]
+Type = NDIS
+Title = "AMD PCNet Family (EtherTeam PCI/ISA) Adapter"
+Version = 3.30
+Drivername = PCNTND$
+
+[FILE]
+Name = PCNTND.DOS
+
+

@@ -1,0 +1,15 @@
+;-----------------------------------------------------------------------
+; This is a NCF example to load the AMD PCNet Family (EtherTeam PCI/ISA)
+; Adapter Server Driver with all supported frame types (the INT and PORT
+; are here only for example, usually they are not needed):
+;-----------------------------------------------------------------------
+
+load pcntnw int=A port=2A0 frame=Ethernet_802.3 name=8023x board=1
+load pcntnw int=A port=2A0 frame=Ethernet_802.2 name=8022x board=1
+load pcntnw int=A port=2A0 frame=Ethernet_II name=EIIx board=1
+load pcntnw int=A port=2A0 frame=Ethernet_SNAP name=snapx board=1
+bind ipx to 8023x net=3000
+bind ipx to 8022x net=2000
+bind ipx to EIIx  net=3500
+bind ipx to snapx net=2500
+

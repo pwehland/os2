@@ -1,0 +1,30 @@
+
+[netcard]
+;   key = description, MSID, type, media, mode, install, protini, style
+;       key:            unique identifier
+;       description:    text description in quotes
+;       MSID:           card detection id (see carddefs.h)
+;       type:           ndis|ndis_sngl|mono
+;       media:          arcnet|baseband|broadband|ethernet|fddi|tokenring
+;       mode:           real|vxd
+;       install:        section name of install script
+;       protini:        section name of protocol.ini script
+;       style:          0x0001  Not compatible with prot-mode protocols
+;                       0x0002  Not compatible with IPX protocols
+;
+;
+; The cards are organised in alphabetical order according to the name
+; of the card.  Make sure you keep them in order if you add a new card
+
+ibm$pcntnd="AMD PCnet Family (EtherTeam PCI/ISA) Adapter",561,ndis,ethernet,real,ibm$pcntnd,ibm$pcntnd_nif
+
+
+[ibm$pcntnd]
+devdir= 1:pcntnd.dos
+drvdir= 2:pcntnd.dos
+device=@drvdir\pcntnd.dos,@devdir\pcntnd.dos
+
+[ibm$pcntnd_nif]
+DRIVERNAME=PCNTND$
+
+

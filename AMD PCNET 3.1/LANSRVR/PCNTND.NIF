@@ -1,0 +1,15 @@
+[PCNTND]
+   Type = NDIS
+   Title = "AMD PCNet Family (EtherTeam PCI/ISA) Adapter"
+   Version = 1.0
+   DriverName = PCNTND$
+   Xports = NETBEUI LANDD
+
+[FILE]
+   Name = PCNTND.OS2
+   Path = IBMCOM\MACS
+
+; [NoParameters]
+
+
+
